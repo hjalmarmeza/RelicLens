@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { saveRelic } from "@/lib/db";
+import jsPDF from "jspdf";
 
 export const LETTERS = "ABCDEFGHIJ";
 
@@ -38,13 +39,18 @@ export const getOverlayStylesForVault = (result: any) => {
 
 
 export default function ImageUploader() {
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
+    const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [griddedImage, setGriddedImage] = useState<string | null>(null);
+  const [detailImage, setDetailImage] = useState<string | null>(null);
+  const [provenanceText, setProvenanceText] = useState("");
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<any>(null);
   const [apiKey, setApiKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const detailInputRef = useRef<HTMLInputElement>(null);
 
   const GRID_SIZE = 10;
 
@@ -136,12 +142,7 @@ export default function ImageUploader() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    
-    // IMPORTANTE: Limpiar el valor para permitir subir la misma foto dos veces seguidas en Safari
-    if (e.target) {
-        e.target.value = '';
-    }
-
+    if (e.target) e.target.value = '';
     if (!file) return;
 
     if (!apiKey) {
@@ -150,34 +151,60 @@ export default function ImageUploader() {
       return;
     }
 
-    setIsAnalyzing(true);
     setResult(null);
-    setLoadingStep(1); // "Analizando objetos..."
-
     try {
       const { original, gridded } = await processImage(file);
       setOriginalImage(original);
+      setGriddedImage(gridded);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-      // Simulamos pasos de carga para UI premium
-      setTimeout(() => setLoadingStep(2), 3000); // "Buscando en bases de subastas..."
-      setTimeout(() => setLoadingStep(3), 6000); // "Calculando valor de mercado..."
+  const handleDetailFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    
+    // Procesar sin grid, solo achicar
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        const MAX_DIM = 1000;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX_DIM || h > MAX_DIM) {
+            if (w > h) { h = (MAX_DIM / w) * h; w = MAX_DIM; } 
+            else { w = (MAX_DIM / h) * w; h = MAX_DIM; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        setDetailImage(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.src = URL.createObjectURL(file);
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setLoadingStep(1);
+
+    try {
+      setTimeout(() => setLoadingStep(2), 3000);
+      setTimeout(() => setLoadingStep(3), 6000);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: gridded, apiKey }),
+        body: JSON.stringify({ image: griddedImage, detailImage, provenance: provenanceText, apiKey }),
       });
       
       const data = await response.json();
-      
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to analyze image");
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to analyze image");
       
       setResult(data);
-      // Guardar en la base de datos local
-      await saveRelic(original, data);
+      await saveRelic(originalImage!, data);
     } catch (error: any) {
       console.error(error);
       setResult({ error: error.message });
@@ -189,6 +216,97 @@ export default function ImageUploader() {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+
+  const generatePDF = (item: any, imageUrl: string) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(25, 25, 25);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 215, 0); // Gold
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text("RELICLENS", 105, 25, { align: "center" });
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("CERTIFICADO OFICIAL DE TASACIÓN IA", 105, 32, { align: "center" });
+
+    // Item Title
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    const splitTitle = doc.splitTextToSize(item.itemName, 170);
+    doc.text(splitTitle, 20, 55);
+
+    // Image (assuming originalImage is jpeg/png)
+    if (imageUrl && !imageUrl.startsWith('data:image/svg')) {
+       try {
+           doc.addImage(imageUrl, "JPEG", 130, 60, 60, 60);
+       } catch(e) {
+           console.log("Error agregando imagen al PDF", e);
+       }
+    }
+
+    // Details Box
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(250, 250, 250);
+    doc.rect(20, 65, 100, 50, 'FD');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("VALOR ESTIMADO", 25, 75);
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(item.estimatedValue || "N/A", 25, 82);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "normal");
+    doc.text("ÉPOCA:", 25, 92);
+    doc.setTextColor(0, 0, 0);
+    doc.text(item.epocaEstimada || "No especificada", 25, 97);
+
+    doc.setTextColor(100, 100, 100);
+    doc.text("MATERIAL:", 25, 107);
+    doc.setTextColor(0, 0, 0);
+    doc.text(item.materiales || "No especificado", 25, 112);
+
+    // Description
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("ANÁLISIS DE AUTENTICIDAD", 20, 130);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const splitAuth = doc.splitTextToSize(item.authenticityMarkers || item.description, 170);
+    doc.text(splitAuth, 20, 140);
+    
+    let yPos = 140 + (splitAuth.length * 5) + 10;
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("ESTADO DE CONSERVACIÓN", 20, yPos);
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const splitCond = doc.splitTextToSize(item.estadoConservacion || "No evaluado", 170);
+    doc.text(splitCond, 20, yPos);
+    yPos += (splitCond.length * 5) + 10;
+
+    // Footer
+    doc.setDrawColor(255, 215, 0);
+    doc.setLineWidth(1);
+    doc.line(20, 270, 190, 270);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text("Este certificado es generado por Inteligencia Artificial y representa una estimación basada en el mercado digital. No constituye un documento legal vinculante.", 105, 278, { align: "center", maxWidth: 170 });
+    
+    doc.save(`Certificado_RelicLens_${item.itemName.replace(/\s+/g, '_')}.pdf`);
   };
 
   const overlay = getOverlayStylesForVault(result);
@@ -242,6 +360,50 @@ export default function ImageUploader() {
           <p>La IA identificará la pieza más valiosa del lote</p>
           <button className="btn-primary mt-4">Seleccionar Foto</button>
         </div>
+      ) : originalImage && !isAnalyzing && !result ? (
+        <div className="glass-panel result-box animate-fade-in configuration-screen">
+          <h2 className="result-title" style={{ textAlign: "center", marginBottom: "1rem" }}>Configuración del Análisis</h2>
+          
+          <div className="preview-thumbnails" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: 'center' }}>
+            <div className="thumb-box" style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '2px solid #FFD700' }}>
+               <img src={originalImage} alt="General" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+               <div style={{ position: 'absolute', bottom: 0, width: '100%', background: 'rgba(0,0,0,0.7)', fontSize: '10px', textAlign: 'center', padding: '2px 0' }}>Plano General</div>
+            </div>
+            
+            <div className="thumb-box" onClick={() => detailInputRef.current?.click()} style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '2px dashed var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'rgba(255,255,255,0.05)' }}>
+               {detailImage ? (
+                 <>
+                   <img src={detailImage} alt="Detalle" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   <div style={{ position: 'absolute', bottom: 0, width: '100%', background: 'rgba(0,0,0,0.7)', fontSize: '10px', textAlign: 'center', padding: '2px 0' }}>Detalle / Sello</div>
+                 </>
+               ) : (
+                 <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🔍</div>
+                    + Añadir<br/>Detalle
+                 </div>
+               )}
+            </div>
+            <input type="file" accept="image/*" ref={detailInputRef} onChange={handleDetailFileChange} style={{ display: 'none' }} />
+          </div>
+
+          <div className="provenance-section" style={{ marginBottom: '1.5rem' }}>
+             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Historia del objeto (Opcional):</label>
+             <textarea 
+               value={provenanceText}
+               onChange={(e) => setProvenanceText(e.target.value)}
+               placeholder="Ej: Era de mi abuela, comprado en España en 1950..."
+               style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--foreground)', minHeight: '80px', fontSize: '0.9rem', resize: 'vertical' }}
+             />
+          </div>
+
+          <button className="btn-primary w-full" onClick={handleAnalyze} style={{ marginBottom: '1rem', padding: '1rem', fontSize: '1.1rem' }}>
+             Comenzar Tasación IA
+          </button>
+          
+          <button className="btn-secondary w-full" onClick={() => { setOriginalImage(null); setDetailImage(null); setProvenanceText(""); }}>
+             Cancelar
+          </button>
+        </div>
       ) : (
         <div className="glass-panel result-box animate-fade-in">
           <div className="image-preview-container">
@@ -292,7 +454,7 @@ export default function ImageUploader() {
             <div className="analysis-result-list animate-fade-in" style={{ marginTop: '2rem', textAlign: 'center' }}>
                <h2 className="result-title" style={{ color: '#ff4d4d', fontSize: '1.5rem', marginBottom: '1rem' }}>❌ Sin valor de subasta detectado</h2>
                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>La Inteligencia Artificial ha examinado la imagen y no ha encontrado ninguna antigüedad o pieza que justifique un valor comercial en el mercado de subastas. Los objetos presentes parecen ser de producción masiva, réplicas o decoración moderna.</p>
-               <button className="btn-primary" onClick={() => { setOriginalImage(null); setResult(null); }}>Escanear otra foto</button>
+               <button className="btn-primary" onClick={() => { setOriginalImage(null); setResult(null); setDetailImage(null); setProvenanceText(""); }}>Escanear otra foto</button>
             </div>
           )}
 
@@ -304,13 +466,44 @@ export default function ImageUploader() {
               
               {result.items.map((item: any, itemIndex: number) => (
                 <div key={itemIndex} className="analysis-result" style={{ marginBottom: "2rem", borderTop: itemIndex > 0 ? "1px solid var(--border-color)" : "none", paddingTop: itemIndex > 0 ? "2rem" : "0" }}>
-                  <h3 className="result-title" style={{ fontSize: "1.5rem", marginTop: 0 }}>
-                    {itemIndex + 1}. {item.itemName}
-                  </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <h3 className="result-title" style={{ fontSize: "1.5rem", marginTop: 0, marginBottom: 0 }}>
+                      {itemIndex + 1}. {item.itemName}
+                    </h3>
+                    <button 
+                      onClick={() => generatePDF(item, originalImage!)}
+                      style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#000', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      📄 Exportar PDF
+                    </button>
+                  </div>
                   <p className="result-value" style={{ fontSize: "1.2rem", color: "#FFD700", margin: "0.5rem 0" }}>
                     Valor Estimado: <strong>{item.estimatedValue || "Buscando referencias..."}</strong>
                   </p>
-                  <p className="result-desc" style={{ marginBottom: "0.5rem" }}>{item.description}</p>
+
+                  <div className="expert-badges" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                     {item.epocaEstimada && (
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                           <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>⏳ Época</span>
+                           <strong>{item.epocaEstimada}</strong>
+                        </div>
+                     )}
+                     {item.materiales && (
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                           <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>🏺 Materiales</span>
+                           <strong>{item.materiales}</strong>
+                        </div>
+                     )}
+                  </div>
+                  
+                  {item.estadoConservacion && (
+                     <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>🛠 Estado de Conservación</span>
+                        <strong>{item.estadoConservacion}</strong>
+                     </div>
+                  )}
+
+                  <p className="result-desc" style={{ marginBottom: "1rem", lineHeight: '1.5' }}>{item.description}</p>
                         
                   {item.authenticityMarkers && (
                     <div className="authenticity-guide" style={{ 
@@ -356,7 +549,7 @@ export default function ImageUploader() {
           )}
 
           {!isAnalyzing && (
-            <button className="btn-secondary mt-4 w-full" onClick={() => setOriginalImage(null)}>
+            <button className="btn-secondary mt-4 w-full" onClick={() => { setOriginalImage(null); setDetailImage(null); setProvenanceText(""); }}>
               Analizar otra foto
             </button>
           )}
