@@ -1,65 +1,132 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import ImageUploader from "@/components/ImageUploader";
+import RelicVault from "@/components/RelicVault";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+  const [hasEntered, setHasEntered] = useState(false);
+  const [activeTab, setActiveTab] = useState<"scanner" | "vault">("scanner");
+
+  if (!hasEntered) {
+    return (
+      <main className="splash-screen animate-fade-in">
+        <div className="splash-content">
+          <div className="logo-container pulse">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/RelicLens.jpg" alt="RelicLens Logo" className="logo-image" />
+          </div>
+          <h1 className="splash-title">RelicLens</h1>
+          <p className="splash-subtitle">Revela el valor oculto a simple vista</p>
+          
+          <button className="btn-primary mt-8" onClick={() => setHasEntered(true)}>
+            Entrar a la Bóveda
+          </button>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <style jsx>{`
+          .splash-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+          }
+          .splash-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 400px;
+          }
+          .logo-container {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid var(--accent-main);
+            box-shadow: 0 0 30px rgba(234, 179, 8, 0.4);
+            margin-bottom: 2rem;
+          }
+          .logo-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .splash-title {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+          }
+          .splash-subtitle {
+            font-size: 1.1rem;
+            color: var(--accent-light);
+          }
+          .mt-8 {
+            margin-top: 3rem;
+          }
+        `}</style>
       </main>
-    </div>
+    );
+  }
+
+  return (
+    <main className="app-main">
+      <header style={{ marginBottom: "2rem", textAlign: "center" }}>
+        <h1 className="animate-fade-in" style={{ marginBottom: "0" }}>RelicLens</h1>
+        
+        <div className="tab-nav animate-fade-in" style={{ animationDelay: "0.1s" }}>
+          <button 
+            className={`tab-btn ${activeTab === 'scanner' ? 'active' : ''}`}
+            onClick={() => setActiveTab('scanner')}
+          >
+            📸 Escanear
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'vault' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vault')}
+          >
+            🏛️ La Bóveda
+          </button>
+        </div>
+      </header>
+
+      <section style={{ display: "flex", justifyContent: "center", width: "100%", animationDelay: "0.2s" }}>
+        {activeTab === 'scanner' ? <ImageUploader /> : <RelicVault />}
+      </section>
+      <style jsx>{`
+        .app-main {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+        .tab-nav {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-top: 1.5rem;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 0.5rem;
+          border-radius: 30px;
+          border: 1px solid var(--glass-border);
+          display: inline-flex;
+        }
+        .tab-btn {
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          padding: 0.8rem 1.5rem;
+          border-radius: 20px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+        .tab-btn:hover {
+          color: var(--text-primary);
+        }
+        .tab-btn.active {
+          background: var(--accent-main);
+          color: #000;
+          box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+      `}</style>
+    </main>
   );
 }
