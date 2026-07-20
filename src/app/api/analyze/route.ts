@@ -22,7 +22,7 @@ Utiliza este contexto para afinar tu tasación.
 ` : ""}
 Tu tarea es identificar los objetos que más destaquen y que tengan un ALTA PROBABILIDAD DE SER ANTIGÜEDADES DE VALOR en el mercado de subastas. Encuentra el "Top 3".
 
-ATENCIÓN 1: REGLA DE ORO: Si al analizar la imagen determinas que ABSOLUTAMENTE TODOS los objetos son chatarra moderna irrefutable (ej. cargadores de celular, botellas de plástico, herramientas modernas), devuelve "items": []. SIN EMBARGO, si ves objetos de arte, jarrones, cuadros, o platos de porcelana clásica (aunque no veas la marca), ASUME QUE PODRÍAN TENER VALOR e inclúyelos en tu análisis.
+ATENCIÓN 1: REGLA DE ORO: Si al analizar la imagen determinas que ABSOLUTAMENTE TODOS los objetos son chatarra, decoración moderna común, baratijas, imitaciones baratas o herramientas modernas sin valor de colección, DEBES DEVOLVER UNA LISTA VACÍA DE ITEMS: "items": []. NO DEVUELVAS OBJETOS SIN VALOR SOLO POR LLENAR LA LISTA. Si devuelves 0 items, es una respuesta perfectamente válida y correcta.
 ATENCIÓN 2: Las coordenadas en 'gridArea' deben formar un rectángulo que CUBRA EL OBJETO COMPLETO de extremo a extremo en la imagen principal.
 
 Debes devolver EXACTAMENTE un objeto JSON (sin formato Markdown, sin texto adicional) con la siguiente estructura:
