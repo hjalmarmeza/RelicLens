@@ -136,6 +136,12 @@ export default function ImageUploader() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    
+    // IMPORTANTE: Limpiar el valor para permitir subir la misma foto dos veces seguidas en Safari
+    if (e.target) {
+        e.target.value = '';
+    }
+
     if (!file) return;
 
     if (!apiKey) {
