@@ -29,8 +29,8 @@ Debes devolver EXACTAMENTE un objeto JSON (sin formato Markdown, sin texto adici
       "itemName": "Nombre específico del objeto en Español (ej: Figura de porcelana moderna)",
       "itemNameEnglish": "Specific English translation of the item name (e.g. Modern Porcelain Figurine)",
       "description": "Una breve descripción en Español de lo que ves.",
-      "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Si parece producción masiva, decoración moderna o imitación barata, indícalo claramente. Si parece antiguo o auténtico, menciona qué firmas (ej: Meissen), pátinas o métodos de ensamblaje probarían su valor. Sé técnico y profesional, pero NUNCA asumas que algo es valioso solo porque sí.",
-      "estimatedValue": "Rango de precio realista (ej: si es una baratija de sala pon $2 - $15 USD, si es antigüedad pon $500 - $1,500 USD). Sé brutalmente honesto.",
+      "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Si parece producción masiva, decoración moderna o imitación barata, indícalo claramente. Si ves un sello, identifica de qué fábrica es. Sé técnico y profesional, pero NUNCA asumas que algo es valioso solo porque sí.",
+      "estimatedValue": "REGLA DE ORO: Si es una decoración moderna, baratija o reproducción sin valor histórico, escribe EXACTAMENTE: 'Sin valor de subasta (Decoración común)'. SOLO asigna un rango en dólares (ej: $500 - $1500 USD) si estás ABSOLUTAMENTE SEGURO de que es una antigüedad genuina y codiciada.",
       "gridArea": ["Coordenada Superior Izquierda", "Coordenada Inferior Derecha"],
       "gridCenter": "Coordenada exacta del centro del objeto"
     }
