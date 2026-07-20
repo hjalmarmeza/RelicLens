@@ -219,7 +219,7 @@ export default function ImageUploader() {
   };
 
 
-  const generatePDF = (item: any, imageUrl: string) => {
+  const generatePDF = (item: any, imageUrl: string, detailImg?: string | null) => {
     const doc = new jsPDF();
     
     // Header
@@ -242,39 +242,31 @@ export default function ImageUploader() {
     const splitTitle = doc.splitTextToSize(item.itemName, 170);
     doc.text(splitTitle, 20, 55);
 
-    // Image (assuming originalImage is jpeg/png)
-    if (imageUrl && !imageUrl.startsWith('data:image/svg')) {
-       try {
-           doc.addImage(imageUrl, "JPEG", 130, 60, 60, 60);
-       } catch(e) {
-           console.log("Error agregando imagen al PDF", e);
-       }
-    }
-
-    // Details Box
+    // Details Box (Full Width now)
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(250, 250, 250);
-    doc.rect(20, 65, 100, 50, 'FD');
+    doc.rect(20, 65, 170, 50, 'FD');
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text("VALOR ESTIMADO", 25, 75);
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(item.estimatedValue || "N/A", 25, 82);
+    const splitValue = doc.splitTextToSize(item.estimatedValue || "N/A", 160);
+    doc.text(splitValue, 25, 82);
 
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.setFont("helvetica", "normal");
-    doc.text("ÉPOCA:", 25, 92);
+    doc.text("ÉPOCA:", 25, 96);
     doc.setTextColor(0, 0, 0);
-    doc.text(item.epocaEstimada || "No especificada", 25, 97);
+    doc.text(item.epocaEstimada || "No especificada", 25, 101);
 
     doc.setTextColor(100, 100, 100);
-    doc.text("MATERIAL:", 25, 107);
+    doc.text("MATERIAL:", 110, 96);
     doc.setTextColor(0, 0, 0);
-    doc.text(item.materiales || "No especificado", 25, 112);
+    doc.text(item.materiales || "No especificado", 110, 101);
 
     // Description
     doc.setFontSize(12);
@@ -302,7 +294,7 @@ export default function ImageUploader() {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(138, 43, 226); // Purple for OCR
-        doc.text("ESCÁNER OCR (FIRMASC Y SELLOS)", 20, yPos);
+        doc.text("ESCÁNER OCR (FIRMAS Y SELLOS)", 20, yPos);
         yPos += 10;
         doc.setFontSize(10);
         doc.setFont("helvetica", "italic");
@@ -310,6 +302,19 @@ export default function ImageUploader() {
         const splitHallmark = doc.splitTextToSize(item.hallmarkAnalysis, 170);
         doc.text(splitHallmark, 20, yPos);
         yPos += (splitHallmark.length * 5) + 10;
+    }
+    
+    // Render Images at the bottom (yPos)
+    try {
+        if (imageUrl && !imageUrl.startsWith('data:image/svg')) {
+            // max height 60
+            doc.addImage(imageUrl, "JPEG", 20, yPos, 60, 60);
+        }
+        if (detailImg && !detailImg.startsWith('data:image/svg')) {
+            doc.addImage(detailImg, "JPEG", 90, yPos, 60, 60);
+        }
+    } catch(e) {
+        console.log("Error agregando imagenes al PDF", e);
     }
 
     // Footer
@@ -485,7 +490,7 @@ export default function ImageUploader() {
                       {itemIndex + 1}. {item.itemName}
                     </h3>
                     <button 
-                      onClick={() => generatePDF(item, originalImage!)}
+                      onClick={() => generatePDF(item, originalImage!, detailImage)}
                       style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#000', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
                     >
                       📄 Exportar PDF
