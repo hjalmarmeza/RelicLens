@@ -10,15 +10,10 @@ export default function RelicVault() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showOverlay, setShowOverlay] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    loadRelics();
-  }, []);
-
   const loadRelics = async () => {
     try {
       const data = await getAllRelics();
-      setRelics(data);
-      // Initialize overlay state to true for all
+      setRelics(data.sort((a, b) => b.timestamp - a.timestamp));
       const initialOverlays: Record<string, boolean> = {};
       data.forEach(r => initialOverlays[r.id] = true);
       setShowOverlay(initialOverlays);
@@ -29,11 +24,16 @@ export default function RelicVault() {
     }
   };
 
+  useEffect(() => {
+    loadRelics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm("¿Estás seguro de eliminar este registro de la bóveda?")) {
       await deleteRelic(id);
-      await loadRelics();
+      setRelics(prev => prev.filter(r => r.id !== id));
     }
   };
 
@@ -162,171 +162,7 @@ export default function RelicVault() {
         })}
       </div>
 
-      <style jsx>{`
-        .vault-container {
-          width: 100%;
-        }
-        .vault-loading {
-          text-align: center;
-          color: var(--accent-main);
-          font-size: 1.2rem;
-          padding: 3rem;
-        }
-        .empty-vault {
-          text-align: center;
-          padding: 4rem 2rem;
-        }
-        .empty-icon {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          opacity: 0.5;
-        }
-        .vault-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1.5rem;
-        }
-        @media (min-width: 768px) {
-          .vault-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-        .vault-card {
-          overflow: hidden;
-          padding: 0;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .vault-card:hover {
-          border-color: var(--accent-main);
-        }
-        .vault-card.expanded {
-          grid-column: 1 / -1;
-        }
-        .card-image-container {
-          position: relative;
-          width: 100%;
-          background: #000;
-        }
-        .vault-image {
-          width: 100%;
-          height: 200px;
-          object-fit: cover;
-          display: block;
-        }
-        .expanded .vault-image {
-          height: auto;
-          max-height: 600px;
-          object-fit: contain;
-        }
-        .toggle-overlay-btn {
-          position: absolute;
-          bottom: 10px;
-          right: 10px;
-          background: rgba(0,0,0,0.7);
-          color: white;
-          border: 1px solid var(--glass-border);
-          padding: 0.5rem 1rem;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          cursor: pointer;
-          backdrop-filter: blur(4px);
-        }
-        .overlay-darken {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.4);
-          pointer-events: none;
-        }
-        .highlight-area {
-          position: absolute;
-          background: rgba(255, 215, 0, 0.15);
-          backdrop-filter: brightness(1.2);
-          pointer-events: none;
-        }
-        .highlight-borders {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          border: 2px solid #FFD700;
-        }
-        .center-target {
-          position: absolute;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-        }
-        .target-dot {
-          width: 10px; height: 10px;
-          background: #FF0000;
-          border-radius: 50%;
-        }
-        .target-ring-static {
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 30px; height: 30px;
-          border: 2px solid rgba(255, 0, 0, 0.5);
-          border-radius: 50%;
-        }
-        .card-content {
-          padding: 1.5rem;
-        }
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-        .vault-item-title {
-          margin: 0 0 0.5rem 0;
-          color: var(--accent-light);
-          font-size: 1.2rem;
-        }
-        .delete-btn {
-          background: none;
-          border: none;
-          font-size: 1.2rem;
-          cursor: pointer;
-          opacity: 0.5;
-          transition: opacity 0.2s;
-        }
-        .delete-btn:hover {
-          opacity: 1;
-        }
-        .vault-date {
-          margin: 0 0 1rem 0;
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-        }
-        .vault-price {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: bold;
-          color: #FFD700;
-        }
-        .expanded-details {
-          margin-top: 1.5rem;
-          padding-top: 1.5rem;
-          border-top: 1px solid var(--border-color);
-        }
-        .vault-desc {
-          line-height: 1.6;
-          color: var(--text-secondary);
-          margin-bottom: 1.5rem;
-        }
-        .vault-market h4 {
-          margin: 0 0 0.5rem 0;
-          color: var(--text-primary);
-        }
-        .vault-market-link {
-          display: block;
-          color: var(--accent-main);
-          text-decoration: none;
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-        }
-        .vault-market-link:hover {
-          text-decoration: underline;
-        }
-      `}</style>
+      
     </div>
   );
 }
