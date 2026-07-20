@@ -37,6 +37,7 @@ Debes devolver EXACTAMENTE un objeto JSON (sin formato Markdown, sin texto adici
       "epocaEstimada": "Estima la época o año (ej. 'Art Déco, circa 1920', 'Reproducción moderna 2010').",
       "estadoConservacion": "Evalúa el estado visible (ej. 'Presenta pátina original, buen estado', 'Desgaste severo, posibles grietas').",
       "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Identifica firmas, marcas, ensamblajes históricos. Justifica su autenticidad.",
+      "hallmarkAnalysis": "Si hay foto de detalle, actúa como ESCÁNER OCR experto. Extrae TODAS las letras, firmas, números o sellos y crúzalos con bases de datos históricas (ej: sellos de plata, marcas de porcelana). Si no hay foto de detalle, pon 'No se analizó detalle'.",
       "estimatedValue": "Rango de precio en dólares (ej: $500 - $1500 USD).",
       "gridArea": ["Coordenada Superior Izquierda", "Coordenada Inferior Derecha"],
       "gridCenter": "Coordenada exacta del centro del objeto"
@@ -104,6 +105,7 @@ Ejemplo de coordenadas: gridArea: ["B2", "D4"], gridCenter: "C3".`;
                epocaEstimada: result.epocaEstimada || "No especificado",
                estadoConservacion: result.estadoConservacion || "No especificado",
                authenticityMarkers: result.authenticityMarkers,
+               hallmarkAnalysis: result.hallmarkAnalysis || "No analizado",
                estimatedValue: result.estimatedValue,
                gridArea: result.gridArea,
                gridCenter: result.gridCenter
@@ -124,11 +126,26 @@ Ejemplo de coordenadas: gridArea: ["B2", "D4"], gridCenter: "C3".`;
           additional_params: { hl: 'en' }
         };
         
-        let response = await google.search(query, searchOptions);
+        let response;
         
-        // Estrategia de Fallback: Si no hay resultados estrictos, abrimos la búsqueda al máximo
-        if (!response.results || response.results.length === 0) {
-           console.log(`Búsqueda estricta fallida, intentando búsqueda amplia para: ${searchTerm}`);
+        // RELICLENS 3.0: Reverse Image Search si hay foto de detalle
+        if (detailImage) {
+           console.log(`Ejecutando Búsqueda Visual Inversa de Google para: ${searchTerm}`);
+           try {
+              const base64Data = detailImage.split(',')[1];
+              const buffer = Buffer.from(base64Data, 'base64');
+              response = await google.search(buffer, { ris: true });
+           } catch(e) {
+              console.log("Fallo Búsqueda Visual Inversa, usando texto fallback");
+              response = await google.search(query, searchOptions);
+           }
+        } else {
+           response = await google.search(query, searchOptions);
+        }
+        
+        // Estrategia de Fallback: Si no hay resultados visuales ni estrictos, abrimos la búsqueda al máximo
+        if (!response || !response.results || response.results.length === 0) {
+           console.log(`Búsqueda inicial fallida, intentando búsqueda amplia de texto para: ${searchTerm}`);
            query = `${searchTerm} estimated value`;
            response = await google.search(query, searchOptions);
         }
