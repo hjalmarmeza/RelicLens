@@ -15,21 +15,22 @@ export async function POST(req: Request) {
     }
 
     const prompt = `Analiza la siguiente imagen de una mesa con varios objetos. La imagen tiene superpuesta una cuadrícula con letras (A, B, C...) en el eje X y números (1, 2, 3...) en el eje Y.
-Tu tarea es identificar los objetos más valiosos o antigüedades de toda la mesa. Encuentra el "Top 3" de piezas más valiosas. Si hay menos de 3 objetos de valor, devuelve solo los que encuentres.
+Tu tarea es identificar los objetos que más destaquen. Encuentra el "Top 3". Si hay menos de 3 objetos, devuelve solo los que encuentres.
 
 Para evitar errores, primero debes analizar los objetos que ves y sus posiciones en la cuadrícula antes de dar el resultado final.
-ATENCIÓN: Si el objeto de valor está dentro de un grupo de objetos muy juntos (como un montón de monedas, joyas o sellos en la misma coordenada), DEBES ser extremadamente específico en tu campo "description". No digas "un conjunto de monedas", debes identificar y describir físicamente CUÁL moneda exacta es la de valor (ej: "La moneda de plata más grande en la esquina superior izquierda del montón") para que el usuario pueda diferenciarla de las demás.
+ATENCIÓN 1: Si el objeto está dentro de un grupo de objetos muy juntos, DEBES ser extremadamente específico en tu campo "description" (ej: "La moneda de plata más grande en la esquina superior izquierda").
+ATENCIÓN 2: Las coordenadas en 'gridArea' deben formar un rectángulo que CUBRA EL OBJETO COMPLETO de extremo a extremo, no solo el centro o una pequeña parte.
 
 Debes devolver EXACTAMENTE un objeto JSON (sin formato Markdown, sin texto adicional) con la siguiente estructura:
 {
-  "reasoning": "Analiza aquí paso a paso qué objetos de valor ves, dónde están usando la cuadrícula, y por qué los elegiste para el Top 3.",
+  "reasoning": "Analiza paso a paso qué objetos ves, dónde están, y si parecen antigüedades reales o simple decoración moderna barata.",
   "items": [
     {
-      "itemName": "Nombre específico del objeto en Español (ej: Reloj de mesa antiguo)",
-      "itemNameEnglish": "Specific English translation of the item name (e.g. Antique Desk Clock)",
-      "description": "Una breve descripción en Español de por qué es valioso en general.",
-      "authenticityMarkers": "ACTÚA COMO UN MAESTRO TASADOR. Prohibido dar consejos genéricos como 'busca un sello 925' o 'busca 14k'. Debes mencionar marcas específicas, firmas de fabricantes célebres (ej: Tiffany, Patek, Meissen), épocas de diseño, tipos de pátina, o métodos de ensamblaje histórico que confirmarían el altísimo valor de ESTA pieza en particular. Sé extremadamente detallista, técnico y profesional.",
-      "estimatedValue": "Rango de precio estimado en el mercado (ej: $500 - $1,500 USD). DEBES dar tu mejor tasación experta.",
+      "itemName": "Nombre específico del objeto en Español (ej: Figura de porcelana moderna)",
+      "itemNameEnglish": "Specific English translation of the item name (e.g. Modern Porcelain Figurine)",
+      "description": "Una breve descripción en Español de lo que ves.",
+      "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Si parece producción masiva, decoración moderna o imitación barata, indícalo claramente. Si parece antiguo o auténtico, menciona qué firmas (ej: Meissen), pátinas o métodos de ensamblaje probarían su valor. Sé técnico y profesional, pero NUNCA asumas que algo es valioso solo porque sí.",
+      "estimatedValue": "Rango de precio realista (ej: si es una baratija de sala pon $2 - $15 USD, si es antigüedad pon $500 - $1,500 USD). Sé brutalmente honesto.",
       "gridArea": ["Coordenada Superior Izquierda", "Coordenada Inferior Derecha"],
       "gridCenter": "Coordenada exacta del centro del objeto"
     }
