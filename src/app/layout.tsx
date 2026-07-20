@@ -8,8 +8,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Antique Value Identifier",
+  title: "RelicLens",
   description: "Descubre el valor de tus antigüedades con Inteligencia Artificial",
+  icons: {
+    icon: '/RelicLens.jpg',
+    apple: '/RelicLens.jpg',
+  },
 };
 
 export default function RootLayout({
