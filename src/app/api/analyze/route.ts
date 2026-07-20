@@ -66,7 +66,8 @@ Ejemplo de coordenadas: gridArea: ["B2", "D4"], gridCenter: "C3".`;
             ]
           }
         ],
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        temperature: 0.1
       })
     });
 
@@ -162,14 +163,15 @@ Ejemplo de coordenadas: gridArea: ["B2", "D4"], gridCenter: "C3".`;
           
 1. Traduce los campos 'title' y 'description' al Español. No traduzcas las URLs.
 2. Analiza los precios mencionados EXCLUSIVAMENTE en estos textos para extraer un rango de precio en USD.
-3. BAJO NINGÚN MOTIVO DEBES INVENTAR O ADIVINAR EL PRECIO. Si no ves ningún precio escrito en los resultados de búsqueda, debes poner exactamente: "Requiere tasación manual".
+3. Si los resultados de búsqueda no contienen precios claros o son resultados basura, OBLIGATORIAMENTE debes calcular una "Estimación Teórica Experta" basándote en el prestigio de la marca, el material y la antigüedad del objeto descrito.
+4. Si extraes el precio de los textos, escribe: "$X - $Y USD (Verificado en mercado actual)". Si tienes que calcularlo tú teóricamente porque no hay precios, escribe: "$X - $Y USD (Estimación teórica de IA basada en análisis de época y técnica)".
 
 Debes devolver EXACTAMENTE un objeto JSON con la siguiente estructura:
 {
   "marketData": [
     { "title": "título en español", "description": "descripción en español", "url": "..." }
   ],
-  "marketEstimatedValue": "Ej: $150 - $300 USD (Verificado) o 'Requiere tasación manual'"
+  "marketEstimatedValue": "Ej: $150 - $300 USD (Verificado en mercado actual) o $200 - $450 USD (Estimación teórica de IA basada en análisis de época y técnica)"
 }
 
 Resultados de búsqueda originales:
@@ -184,7 +186,8 @@ ${JSON.stringify(marketData)}`;
             body: JSON.stringify({
               model: "meta-llama/Meta-Llama-3-8B-Instruct",
               messages: [{ role: "user", content: translationPrompt }],
-              response_format: { type: "json_object" }
+              response_format: { type: "json_object" },
+              temperature: 0.1
             })
           });
 
