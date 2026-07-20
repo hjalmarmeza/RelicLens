@@ -15,22 +15,21 @@ export async function POST(req: Request) {
     }
 
     const prompt = `Analiza la siguiente imagen de una mesa con varios objetos. La imagen tiene superpuesta una cuadrícula con letras (A, B, C...) en el eje X y números (1, 2, 3...) en el eje Y.
-Tu tarea es identificar los objetos que más destaquen. Encuentra el "Top 3". Si hay menos de 3 objetos, devuelve solo los que encuentres.
+Tu tarea es identificar los objetos que más destaquen y que tengan un ALTO PROBABILIDAD DE SER ANTIGÜEDADES DE VALOR en el mercado de subastas. Encuentra el "Top 3".
 
-Para evitar errores, primero debes analizar los objetos que ves y sus posiciones en la cuadrícula antes de dar el resultado final.
-ATENCIÓN 1: Si el objeto está dentro de un grupo de objetos muy juntos, DEBES ser extremadamente específico en tu campo "description" (ej: "La moneda de plata más grande en la esquina superior izquierda").
-ATENCIÓN 2: Las coordenadas en 'gridArea' deben formar un rectángulo que CUBRA EL OBJETO COMPLETO de extremo a extremo, no solo el centro o una pequeña parte.
+ATENCIÓN 1: REGLA DE ORO: Si al analizar la imagen determinas que ABSOLUTAMENTE TODOS los objetos son chatarra, decoración moderna común, baratijas, imitaciones baratas o herramientas modernas sin valor de colección, DEBES DEVOLVER UNA LISTA VACÍA DE ITEMS: "items": []. NO DEVUELVAS OBJETOS SIN VALOR SOLO POR LLENAR LA LISTA. Si devuelves 0 items, es una respuesta perfectamente válida y correcta.
+ATENCIÓN 2: Las coordenadas en 'gridArea' deben formar un rectángulo que CUBRA EL OBJETO COMPLETO de extremo a extremo.
 
 Debes devolver EXACTAMENTE un objeto JSON (sin formato Markdown, sin texto adicional) con la siguiente estructura:
 {
-  "reasoning": "Analiza paso a paso qué objetos ves, dónde están, y si parecen antigüedades reales o simple decoración moderna barata.",
+  "reasoning": "Analiza paso a paso qué objetos ves, dónde están, y si parecen antigüedades reales o simple decoración moderna barata. Decide si amerita agregar alguno a la lista de items.",
   "items": [
     {
-      "itemName": "Nombre específico del objeto en Español (ej: Figura de porcelana moderna)",
-      "itemNameEnglish": "Specific English translation of the item name (e.g. Modern Porcelain Figurine)",
+      "itemName": "Nombre específico del objeto en Español",
+      "itemNameEnglish": "Specific English translation of the item name",
       "description": "Una breve descripción en Español de lo que ves.",
-      "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Si parece producción masiva, decoración moderna o imitación barata, indícalo claramente. Si ves un sello, identifica de qué fábrica es. Sé técnico y profesional, pero NUNCA asumas que algo es valioso solo porque sí.",
-      "estimatedValue": "REGLA DE ORO: Si es una decoración moderna, baratija o reproducción sin valor histórico, escribe EXACTAMENTE: 'Sin valor de subasta (Decoración común)'. SOLO asigna un rango en dólares (ej: $500 - $1500 USD) si estás ABSOLUTAMENTE SEGURO de que es una antigüedad genuina y codiciada.",
+      "authenticityMarkers": "ACTÚA CON EXTREMO ESCEPTICISMO. Si ves un sello, identifica de qué fábrica es. Menciona firmas, pátinas o métodos de ensamblaje históricos que prueben su valor.",
+      "estimatedValue": "Rango de precio en dólares (ej: $500 - $1500 USD).",
       "gridArea": ["Coordenada Superior Izquierda", "Coordenada Inferior Derecha"],
       "gridCenter": "Coordenada exacta del centro del objeto"
     }

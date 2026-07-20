@@ -282,6 +282,14 @@ export default function ImageUploader() {
             )}
           </div>
 
+          {!isAnalyzing && result && !result.error && (!result.items || result.items.length === 0) && (
+            <div className="analysis-result-list animate-fade-in" style={{ marginTop: '2rem', textAlign: 'center' }}>
+               <h2 className="result-title" style={{ color: '#ff4d4d', fontSize: '1.5rem', marginBottom: '1rem' }}>❌ Sin valor de subasta detectado</h2>
+               <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>La Inteligencia Artificial ha examinado la imagen y no ha encontrado ninguna antigüedad o pieza que justifique un valor comercial en el mercado de subastas. Los objetos presentes parecen ser de producción masiva, réplicas o decoración moderna.</p>
+               <button className="btn-primary" onClick={() => { setFile(null); setImagePreview(null); setResult(null); }}>Escanear otra foto</button>
+            </div>
+          )}
+
           {!isAnalyzing && result && !result.error && result.items && result.items.length > 0 && (
             <div className="analysis-result-list animate-fade-in" style={{ marginTop: '2rem' }}>
               <h2 className="result-title" style={{ textAlign: "center", marginBottom: "1.5rem" }}>
